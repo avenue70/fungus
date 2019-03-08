@@ -88,6 +88,10 @@ namespace Fungus
 
         protected StringSubstituter stringSubstituer;
 
+#if UNITY_EDITOR
+        public bool SelectedCommandsStale { get; set; }
+#endif
+
         #if UNITY_5_4_OR_NEWER
         #else
         protected virtual void OnLevelWasLoaded(int level) 
@@ -342,12 +346,15 @@ namespace Fungus
         { 
             get
             {
-                return selectedBlocks.FirstOrDefault();
+                if (selectedBlocks == null || selectedBlocks.Count == 0)
+                    return null;
+
+                return selectedBlocks[0];
             } 
             set
             {
-                selectedBlocks.Clear();
-                selectedBlocks.Add(value);
+                ClearSelectedBlocks();
+                AddSelectedBlock(value);
             } 
         }
 
@@ -362,6 +369,8 @@ namespace Fungus
         /// The list of variables that can be accessed by the Flowchart.
         /// </summary>
         public virtual List<Variable> Variables { get { return variables; } }
+
+        public virtual int VariableCount { get { return variables.Count; } }
 
         /// <summary>
         /// Description text displayed in the Flowchart editor window
@@ -1096,6 +1105,9 @@ namespace Fungus
         public virtual void ClearSelectedCommands()
         {
             selectedCommands.Clear();
+#if UNITY_EDITOR
+            SelectedCommandsStale = true;
+#endif
         }
 
         /// <summary>
@@ -1106,14 +1118,21 @@ namespace Fungus
             if (!selectedCommands.Contains(command))
             {
                 selectedCommands.Add(command);
+#if UNITY_EDITOR
+                SelectedCommandsStale = true;
+#endif
             }
         }
-
+        
         /// <summary>
         /// Clears the list of selected blocks.
         /// </summary>
         public virtual void ClearSelectedBlocks()
         {
+            foreach (var item in selectedBlocks)
+            {
+                item.IsSelected = false;
+            }
             selectedBlocks.Clear();
         }
 
@@ -1124,10 +1143,34 @@ namespace Fungus
         {
             if (!selectedBlocks.Contains(block))
             {
+                block.IsSelected = true;
                 selectedBlocks.Add(block);
             }
         }
 
+        public virtual bool DeselectBlock(Block block)
+        {
+            if (selectedBlocks.Contains(block))
+            {
+                DeselectBlockNoCheck(block);
+                return true;
+            }
+            return false;
+        }
+
+        public virtual void DeselectBlockNoCheck(Block b)
+        {
+            b.IsSelected = false;
+            selectedBlocks.Remove(b);
+        }
+
+        public void UpdateSelectedCache()
+        {
+            selectedBlocks.Clear();
+            var res = gameObject.GetComponents<Block>();
+            selectedBlocks = res.Where(x => x.IsSelected).ToList();
+        }
+        
         /// <summary>
         /// Reset the commands and variables in the Flowchart.
         /// </summary>

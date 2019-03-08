@@ -19,11 +19,31 @@ namespace Fungus
     {
         protected static SaveHistory saveHistory = new SaveHistory();
 
-        public static string STORAGE_DIRECTORY { get { return Application.persistentDataPath + "/FungusSaves/"; } }
+// AveSoft
+		protected byte[] encryptKey;
+		protected byte[] encryptIV;
+		protected bool booEncrypt = false;
+
+// AveSoft
+		public byte[] EncryptionKey
+		{
+			get { return encryptKey; }
+			set { encryptKey = value; booEncrypt = true; }
+		}
+
+		public byte[] EncryptionIV
+		{
+			get { return encryptIV; }
+			set { encryptIV = value; booEncrypt = true; }
+		}
+
+		public static string STORAGE_DIRECTORY { get { return Application.persistentDataPath + "/FungusSaves/"; } }
 
         private static string GetFullFilePath(string saveDataKey)
         {
-            return STORAGE_DIRECTORY + saveDataKey + ".json";
+// AveSoft
+			return STORAGE_DIRECTORY + saveDataKey + ".dat";
+			// return STORAGE_DIRECTORY + saveDataKey + ".json";
         }
 
         protected virtual bool ReadSaveHistory(string saveDataKey)
@@ -35,8 +55,18 @@ namespace Fungus
             var fullFilePath = GetFullFilePath(saveDataKey);
             if (System.IO.File.Exists(fullFilePath))
             {
-                historyData = System.IO.File.ReadAllText(fullFilePath);
-            }
+// AveSoft
+				if (booEncrypt)
+				{
+// AveSoft
+					byte[] encryptByte = System.IO.File.ReadAllBytes(fullFilePath);
+					historyData = Rijndael.DecryptStringFromBytes(encryptByte, encryptKey, encryptIV);
+				}
+				else
+				{
+					historyData = System.IO.File.ReadAllText(fullFilePath);
+				}
+			}
 #endif//UNITY_WEBPLAYER
             if (!string.IsNullOrEmpty(historyData))
             {
@@ -66,7 +96,17 @@ namespace Fungus
                 System.IO.FileInfo file = new System.IO.FileInfo(fileLoc);
                 file.Directory.Create();
                 
-                System.IO.File.WriteAllText(fileLoc, historyData);
+// AveSoft
+				if (booEncrypt)
+				{
+// AveSoft
+					byte[] encryptByte = Rijndael.EncryptStringToBytes(historyData, encryptKey, encryptIV);
+					System.IO.File.WriteAllBytes(fileLoc, encryptByte);
+				}
+				else
+				{
+					System.IO.File.WriteAllText(fileLoc, historyData);
+				}
 #endif//UNITY_WEBPLAYER
                 return true;
             }

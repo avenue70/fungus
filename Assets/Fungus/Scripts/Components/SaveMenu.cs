@@ -43,14 +43,22 @@ namespace Fungus
 
         [Tooltip("The button which fast forwards the save history to the next save point.")]
         [SerializeField] protected Button forwardButton;
-        
-        [Tooltip("The button which restarts the game.")]
+
+// AveSoft
+		[Tooltip("The button which skips next actions")]
+		[SerializeField] protected Button skipButton;
+
+		[Tooltip("The button which restarts the game.")]
         [SerializeField] protected Button restartButton;
 
         [Tooltip("A scrollable text field used for debugging the save data. The text field should be disabled in normal use.")]
         [SerializeField] protected ScrollRect debugView;
 
-        protected static bool saveMenuActive = false;
+// AveSoft
+		[Tooltip("The flowchart with the script \"GameControl\". \nThis is set automatically, so leave it blank!")]
+		public Flowchart saveFlowchart;
+
+		protected static bool saveMenuActive = false;
 
         protected AudioSource clickAudioSource;
 
@@ -60,7 +68,10 @@ namespace Fungus
 
         protected static bool hasLoadedOnStart = false;
 
-        protected virtual void Awake()
+// AveSoft
+		protected bool playClickSound = true;
+
+		protected virtual void Awake()
         {
             // Only one instance of SaveMenu may exist
             if (instance != null)
@@ -183,7 +194,8 @@ namespace Fungus
 
         protected void PlayClickSound()
         {
-            if (clickAudioSource != null)
+// AveSoft
+			if (playClickSound && clickAudioSource != null)
             {
                 clickAudioSource.Play();
             }
@@ -194,7 +206,8 @@ namespace Fungus
         /// <summary>
         /// Gets the string key used to store save game data in Player Prefs. 
         /// </summary>
-        public virtual string SaveDataKey { get { return saveDataKey; } }
+// AveSoft
+        public virtual string SaveDataKey { get { return saveDataKey; } set { saveDataKey = value; } }
 
         /// <summary>
         /// Toggles the expanded / collapsed state of the save menu.
@@ -244,21 +257,45 @@ namespace Fungus
             if (saveManager.NumSavePoints > 0)
             {
                 PlayClickSound();
-                saveManager.Save(saveDataKey);
+// AveSoft
+				saveFlowchart.GetComponent<GameControl>().SaveSlotname();
+				saveManager.EncryptionKey = saveFlowchart.GetComponent<GameControl>().EncryptionKey;
+				saveManager.EncryptionIV = saveFlowchart.GetComponent<GameControl>().EncryptionIV;
+
+				saveManager.Save(saveDataKey);
+// AveSoft
+				saveFlowchart.GetComponent<GameControl>().SaveButtonClicked();
             }
         }
 
-        /// <summary>
-        /// Handler function called when the Load button is pressed.
-        /// </summary>
-        public virtual void Load()
+// AveSoft
+		/// <summary>
+		/// Call funcion "Save" from Class "GameControl".
+		/// </summary>
+		public virtual void SaveWithoutClickSound()
+		{
+			playClickSound = false;
+			Save();
+			playClickSound = true;
+		}
+
+		/// <summary>
+		/// Handler function called when the Load button is pressed.
+		/// </summary>
+		public virtual void Load()
         {
             var saveManager = FungusManager.Instance.SaveManager;
 
             if (saveManager.SaveDataExists(saveDataKey))
             {
-                PlayClickSound();
-                saveManager.Load(saveDataKey);
+// AveSoft
+				saveManager.EncryptionKey = saveFlowchart.GetComponent<GameControl>().EncryptionKey;
+				saveManager.EncryptionIV = saveFlowchart.GetComponent<GameControl>().EncryptionIV;
+
+				PlayClickSound();
+				saveManager.Load(saveDataKey);
+// AveSoft
+				saveFlowchart.GetComponent<GameControl>().LoadButtonClicked();
             }
 
         }
@@ -317,8 +354,17 @@ namespace Fungus
             SceneManager.LoadScene(saveManager.StartScene);
         }
 
-        #endregion
-    }
+// AveSoft
+		/// <summary>
+		/// Handler function called when the Skip button is pressed.
+		/// </summary>
+		public virtual void Skip()
+		{
+			saveFlowchart.GetComponent<GameControl>().SkipButtonClicked();
+		}
+
+		#endregion
+	}
 }
 
 #endif

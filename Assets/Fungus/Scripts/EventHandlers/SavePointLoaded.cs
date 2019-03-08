@@ -3,6 +3,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Fungus
 {
@@ -19,8 +20,10 @@ namespace Fungus
             for (int i = 0; i < savePointKeys.Count; i++)
             {
                 var key = savePointKeys[i];
-                if (string.Compare(key, _savePointKey, true) == 0)
-                {
+// AveSoft
+//				if (string.Compare(key, _savePointKey, true) == 0)
+				if (Regex.IsMatch(_savePointKey, key, RegexOptions.IgnoreCase))
+				{
                     ExecuteBlock();
                     break;
                 }

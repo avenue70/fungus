@@ -83,7 +83,8 @@ namespace Fungus
                 return;
             }
 
-            executionCount++;
+			// AveSoft
+            // executionCount++;
 
             // Override the active say dialog if needed
             if (character != null && character.SetSayDialog != null)

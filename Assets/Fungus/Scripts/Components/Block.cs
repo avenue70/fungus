@@ -218,7 +218,8 @@ namespace Fungus
                 SetExecutionInfo();
             }
 
-            executionCount++;
+			// AveSoft
+            // executionCount++;
             var executionCountAtStart = executionCount;
 
             var flowchart = GetFlowchart();
